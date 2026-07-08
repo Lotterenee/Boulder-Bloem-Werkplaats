@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-cream text-ink font-body antialiased;
+  }
+  h1, h2, h3 {
+    @apply font-heading;
+  }
+  /* Alle interactieve elementen focus-zichtbaar in clay */
+  a:focus-visible, button:focus-visible, input:focus-visible,
+  select:focus-visible, textarea:focus-visible {
+    @apply outline-none ring-2 ring-clay ring-offset-1;
+  }
+}
+
+@layer components {
+  .input {
+    @apply w-full rounded-lg border border-sage bg-paper px-3 py-2 text-sm text-ink placeholder:text-ink-soft/60;
+  }
+  .label {
+    @apply mb-1 block text-sm font-semibold text-ink;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white;
+  }
+}
