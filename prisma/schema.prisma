@@ -1,0 +1,359 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- ENUMS ----------
+enum KlantType {
+  school
+  bso
+  particulier
+  recreatie
+  gemeente
+  anders
+}
+
+enum ProjectFase {
+  kennismaking
+  locatieanalyse
+  samen_ontwerpen
+  schetsontwerp
+  definitief_ontwerp
+  aanleg
+  oplevering_beheer
+}
+
+enum ProjectStatus {
+  actief
+  gepauzeerd
+  afgerond
+  verloren
+}
+
+enum WensBron {
+  kinderen
+  team
+  ouders
+  schouw
+  opdrachtgever
+}
+
+enum WensPrioriteit {
+  moet
+  graag
+  misschien
+}
+
+enum TaakCategorie {
+  algemeen
+  subsidie
+  offerte
+  beheer
+  acquisitie
+}
+
+enum ElementCategorie {
+  klimmen
+  water
+  groen
+  rust
+  moestuin
+  pad
+  terrein
+}
+
+enum ElementSoort {
+  speelaanleiding
+  speeltoestel // WAS 2023-onderscheid
+}
+
+enum SubsidieNiveau {
+  landelijk
+  provincie
+  gemeente
+  waterschap
+  fonds
+}
+
+enum RegelingStatus {
+  open
+  gesloten
+  onzeker
+}
+
+enum AanvraagStatus {
+  scan
+  kansrijk
+  in_voorbereiding
+  ingediend
+  toegekend
+  afgewezen
+  verantwoording
+  afgerond
+}
+
+enum PakketStatus {
+  concept
+  aangeboden
+  verkocht
+}
+
+enum OfferteStatus {
+  concept
+  verzonden
+  geaccepteerd
+  afgewezen
+}
+
+enum MetingType {
+  nulmeting
+  jaartelling
+}
+
+enum PartnerType {
+  groenaannemer
+  toestelleverancier
+  kwekerij
+  keuringsinstantie
+}
+
+// ---------- AUTH ----------
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  naam         String?
+  createdAt    DateTime @default(now())
+}
+
+// ---------- KERN ----------
+model Klant {
+  id             String    @id @default(cuid())
+  organisatie    String
+  type           KlantType
+  contactpersoon String?
+  email          String?
+  telefoon       String?
+  adres          String?
+  plaats         String?
+  gemeente       String // VERPLICHT: subsidieradar filtert hierop
+  notities       String?
+  projecten      Project[]
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model Project {
+  id                 String             @id @default(cuid())
+  klantId            String
+  klant              Klant              @relation(fields: [klantId], references: [id])
+  naam               String
+  fase               ProjectFase        @default(kennismaking)
+  status             ProjectStatus      @default(actief)
+  locatieadres       String?
+  oppervlakteM2      Int?
+  budgetIndicatie    Decimal?           @db.Decimal(10, 2)
+  volgendeActie      String?
+  volgendeActieDatum DateTime?
+  samenvatting       String?
+  wensen             Wens[]
+  taken              Taak[]
+  ontwerpen          Ontwerp[]
+  subsidieAanvragen  SubsidieAanvraag[]
+  educatiePakketten  EducatiePakket[]
+  offertes           Offerte[]
+  metingen           Meting[]
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  @@index([fase])
+  @@index([status])
+}
+
+model Wens {
+  id         String         @id @default(cuid())
+  projectId  String
+  project    Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  bron       WensBron
+  tekst      String
+  prioriteit WensPrioriteit @default(graag)
+  verwerkt   Boolean        @default(false)
+
+  @@index([projectId])
+}
+
+model Taak {
+  id        String        @id @default(cuid())
+  projectId String?
+  project   Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  titel     String
+  categorie TaakCategorie @default(algemeen)
+  deadline  DateTime?
+  afgerond  Boolean       @default(false)
+
+  @@index([deadline])
+}
+
+// ---------- ONTWERPSTUDIO ----------
+model Ontwerp {
+  id            String         @id @default(cuid())
+  projectId     String
+  project       Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  naam          String
+  versie        Int            @default(1)
+  canvas        Json // JSONB: {terrein:{breedteM,diepteM}, raster:1, elementen:[{elementId,x,y,rotatie,schaal}]}
+  laatstBewerkt DateTime       @updatedAt
+  planten       OntwerpPlant[]
+
+  @@index([projectId])
+}
+
+model Element {
+  id                String           @id @default(cuid())
+  naam              String
+  categorie         ElementCategorie
+  soort             ElementSoort // speelaanleiding | speeltoestel (WAS 2023)
+  standaardBreedteM Decimal?         @db.Decimal(5, 2)
+  standaardDiepteM  Decimal?         @db.Decimal(5, 2)
+  valruimteM        Decimal?         @db.Decimal(5, 2) // benodigde valruimte-straal
+  indicatieprijs    Decimal?         @db.Decimal(10, 2)
+  icoon             String? // naam van vorm/icoon
+}
+
+model Plant {
+  id                   String         @id @default(cuid())
+  naamNL               String
+  naamWetenschappelijk String?
+  categorie            String?
+  inheems              Boolean        @default(false)
+  waardplantVoor       String?
+  bloeitijd            String?
+  licht                String?
+  bodem                String?
+  giftig               Boolean        @default(false)
+  ontwerpen            OntwerpPlant[]
+}
+
+model OntwerpPlant {
+  id        String  @id @default(cuid())
+  ontwerpId String
+  plantId   String
+  aantal    Int     @default(1)
+  ontwerp   Ontwerp @relation(fields: [ontwerpId], references: [id], onDelete: Cascade)
+  plant     Plant   @relation(fields: [plantId], references: [id])
+
+  @@unique([ontwerpId, plantId])
+}
+
+// ---------- SUBSIDIES ----------
+model Subsidie {
+  id             String             @id @default(cuid())
+  naam           String
+  verstrekker    String
+  niveau         SubsidieNiveau
+  regio          String?
+  doelgroep      String?
+  maxBedrag      Decimal?           @db.Decimal(10, 2)
+  percentage     String? // bv. "70% / max 10.000 euro"
+  voorwaarden    String?
+  deadline       DateTime? // null = doorlopend
+  doorlopend     Boolean            @default(false)
+  status         RegelingStatus     @default(open)
+  laatstGecheckt DateTime
+  bronlink       String?
+  aanvragen      SubsidieAanvraag[]
+
+  @@index([niveau])
+  @@index([regio])
+}
+
+model SubsidieAanvraag {
+  id                String         @id @default(cuid())
+  projectId         String
+  subsidieId        String
+  project           Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  subsidie          Subsidie       @relation(fields: [subsidieId], references: [id])
+  status            AanvraagStatus @default(scan)
+  bedragAangevraagd Decimal?       @db.Decimal(10, 2)
+  bedragToegekend   Decimal?       @db.Decimal(10, 2)
+  deadline          DateTime?
+  notities          String?
+
+  @@index([projectId])
+  @@index([status])
+}
+
+// ---------- EDUCATIE ----------
+model EducatieActiviteit {
+  id            String             @id @default(cuid())
+  titel         String
+  omschrijving  String?
+  leeftijdVan   Int?
+  leeftijdTot   Int?
+  seizoen       String?
+  duurMinuten   Int?
+  doelen        String? // kerndoelen / pedagogische doelen
+  benodigdheden String?
+  prijs         Decimal?           @db.Decimal(10, 2)
+  pakketten     PakketActiviteit[]
+}
+
+model EducatiePakket {
+  id           String             @id @default(cuid())
+  projectId    String?
+  project      Project?           @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  naam         String
+  status       PakketStatus       @default(concept)
+  totaalprijs  Decimal?           @db.Decimal(10, 2)
+  activiteiten PakketActiviteit[]
+}
+
+model PakketActiviteit {
+  id           String             @id @default(cuid())
+  pakketId     String
+  activiteitId String
+  pakket       EducatiePakket     @relation(fields: [pakketId], references: [id], onDelete: Cascade)
+  activiteit   EducatieActiviteit @relation(fields: [activiteitId], references: [id])
+
+  @@unique([pakketId, activiteitId])
+}
+
+// ---------- OFFERTE ----------
+model Offerte {
+  id            String        @id @default(cuid())
+  projectId     String
+  project       Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  offertenummer String        @unique
+  datum         DateTime      @default(now())
+  status        OfferteStatus @default(concept)
+  regels        Json // JSONB: [{omschrijving, aantal, stuksprijs, btwPct}]
+  totaalExcl    Decimal       @db.Decimal(10, 2)
+  totaalIncl    Decimal       @db.Decimal(10, 2)
+  rolafbakening String // vaste aansprakelijkheidstekst
+}
+
+// ---------- MEETBAAR GROEN ----------
+model Meting {
+  id           String     @id @default(cuid())
+  projectId    String
+  project      Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  datum        DateTime
+  type         MetingType
+  waarnemingen Json // JSONB: [{soortgroep, aantal}]
+  notities     String?
+
+  @@index([projectId])
+}
+
+model Partner {
+  id       String      @id @default(cuid())
+  naam     String
+  type     PartnerType
+  contact  String?
+  tarieven String?
+  notities String?
+}
