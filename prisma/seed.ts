@@ -19,6 +19,7 @@ import {
 } from "./seed-data/demo";
 import { berekenTotalen } from "../lib/domain/btw";
 import { ROLAFBAKENING } from "../lib/domain/rolafbakening";
+import { zoneSjablonen, plantPakketten } from "./seed-data/zones-pakketten";
 
 const prisma = new PrismaClient();
 
@@ -134,6 +135,46 @@ async function main() {
     }
   }
   console.log(`Lesbibliotheek: ${lessen.length} lessen, ${aantalPrintbladen} printbladen`);
+
+  // ---- Zone-sjablonen + plantpakketten (Fase 3c) ----
+  // Regels worden per sjabloon/pakket vervangen zodat de seed herhaalbaar is.
+  for (const z of zoneSjablonen) {
+    const { regels, ...data } = z;
+    await prisma.zoneSjabloon.upsert({
+      where: { id: data.id },
+      update: { naam: data.naam, categorie: data.categorie, eigen: false },
+      create: { id: data.id, naam: data.naam, categorie: data.categorie, eigen: false },
+    });
+    await prisma.zoneSjabloonRegel.deleteMany({ where: { sjabloonId: data.id } });
+    for (const r of regels) {
+      await prisma.zoneSjabloonRegel.create({
+        data: {
+          sjabloonId: data.id,
+          soort: r.soort,
+          refId: r.refId,
+          relXM: r.relXM,
+          relYM: r.relYM,
+          rotatie: r.rotatie ?? 0,
+          schaal: r.schaal ?? 1,
+        },
+      });
+    }
+  }
+  for (const pp of plantPakketten) {
+    const { regels, ...data } = pp;
+    await prisma.plantPakket.upsert({
+      where: { id: data.id },
+      update: { naam: data.naam, doel: data.doel },
+      create: { id: data.id, naam: data.naam, doel: data.doel },
+    });
+    await prisma.plantPakketRegel.deleteMany({ where: { pakketId: data.id } });
+    for (const r of regels) {
+      await prisma.plantPakketRegel.create({
+        data: { pakketId: data.id, plantId: r.plantId, aantal: r.aantal },
+      });
+    }
+  }
+  console.log(`Studio: ${zoneSjablonen.length} zone-sjablonen, ${plantPakketten.length} plantpakketten`);
 
   // ---- Demo-klanten en projecten (alleen dev/preview) ----
   // Nepdata zodat elk scherm gevuld is. Productie heeft SEED_DATA=false en

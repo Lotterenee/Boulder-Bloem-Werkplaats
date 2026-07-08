@@ -207,8 +207,23 @@ export const demoOntwerp = {
       { id: "c-7", elementId: "el-moestuinbak", x: 25, y: 18, rotatie: 0, schaal: 1 },
       { id: "c-8", elementId: "el-vlindertuin", x: 4, y: 20, rotatie: 0, schaal: 1 },
     ],
+    // Beplanting op het canvas (Fase 3b): gespreide soorten voor een
+    // doorlopende bloeiboog en zichtbare seizoensweergave in dev.
+    beplanting: [
+      { id: "cb-1", plantId: "pl-hazelaar", x: 3, y: 3 },
+      { id: "cb-2", plantId: "pl-boerenkrokus", x: 5, y: 3 },
+      { id: "cb-3", plantId: "pl-sleedoorn", x: 11, y: 3 },
+      { id: "cb-4", plantId: "pl-pinksterbloem", x: 13, y: 3 },
+      { id: "cb-5", plantId: "pl-slangenkruid", x: 22, y: 10 },
+      { id: "cb-6", plantId: "pl-knoopkruid", x: 23, y: 11 },
+      { id: "cb-7", plantId: "pl-wilde-marjolein", x: 24, y: 12 },
+      { id: "cb-8", plantId: "pl-beemdkroon", x: 22, y: 12 },
+      { id: "cb-9", plantId: "pl-struikhei", x: 6, y: 19 },
+      { id: "cb-10", plantId: "pl-klimop", x: 2, y: 12 },
+      { id: "cb-11", plantId: "pl-grote-kattenstaart", x: 20, y: 9 },
+    ],
   },
-  // Beplanting koppelen (voedt inheems-percentage).
+  // Beplanting koppelen (voedt inheems-percentage in de DB-lijst).
   planten: [
     { plantId: "pl-sleedoorn", aantal: 8 },
     { plantId: "pl-meidoorn", aantal: 6 },

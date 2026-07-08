@@ -67,6 +67,25 @@ implementatie bewust af; alles hier is klein en terug te draaien.
   em-dashes zijn vervangen door en-dashes (repo-regel). Eén printblad (het
   bordje bij de hooidag) gebruikt het html-escape-blok, zoals voorzien.
 
+## Ontwerpstudio 3b/3c (seizoensbloei, zones, pakketten)
+- De twee voorgestelde migraties (`0008_seizoensbloei` en
+  `0009_zones_pakketten`) zijn als een gecombineerde migratie toegevoegd
+  (`*_seizoensbloei_zones_pakketten`), plus het `Plant.prijs`-veld (nodig voor
+  de pakket-offerte-regel; stond wel in de tekst maar niet in de tabelkolommen).
+- Beplanting leeft nu op het canvas (`Ontwerp.canvas.beplanting`) in plaats van
+  alleen via de losse `OntwerpPlant`-koppeling. De oude koppel-UI onder het
+  canvas is vervangen door planten plaatsen in de studio zelf; `OntwerpPlant`
+  blijft in het schema voor compatibiliteit. Het inheems-percentage en de
+  offerte-beplanting worden nu uit de canvas-beplanting berekend.
+- De exacte zone-coordinaten uit het v3-prototype (`ZONES`-array) waren niet
+  meegeleverd; de relatieve posities zijn zelf ontworpen op basis van de
+  composities in sectie 5.2 van de requirements.
+- "Bewaar als sjabloon" bewaart de hele huidige opstelling (elementen +
+  beplanting) als eigen zone-sjabloon met thumbnail, in plaats van een
+  meervoudige selectie (de studio kent enkelvoudige selectie).
+- Unit-tests voor de bloei-helpers draaien via `npm test` (tsx + node assert),
+  zonder los testframework.
+
 ## Demo-data (nepklanten) op dev
 - Naast de bibliotheekdata seedt `prisma/seed-data/demo.ts` een set nepklanten,
   projecten (over alle 7 fasen), wensen, taken, subsidieaanvragen, een ontwerp

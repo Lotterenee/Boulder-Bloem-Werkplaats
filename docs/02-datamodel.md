@@ -17,9 +17,25 @@ erDiagram
     EducatiePakket ||--o{ PakketActiviteit : bundelt
     EducatieActiviteit ||--o{ PakketActiviteit : in
     EducatieActiviteit ||--o{ Printblad : heeft
+    ZoneSjabloon ||--o{ ZoneSjabloonRegel : bevat
+    PlantPakket ||--o{ PlantPakketRegel : bundelt
+    Plant ||--o{ PlantPakketRegel : in
     Element ||.. Ontwerp : "gebruikt via canvas JSONB"
+    Plant ||.. Ontwerp : "beplanting via canvas JSONB"
     Partner }o..o{ Project : "betrokken (los)"
 ```
+
+## Fase 3b/3c: seizoensbloei, zone-sjablonen en plantpakketten
+- `Plant` kreeg bloeivelden: `bloeimaanden` (12-bits masker, bit 0 = januari,
+  de rekenbron), `wintergroen`, `bloeikleur`, `drachtNectar`/`drachtPollen`,
+  `hoogteM`, `diameterM` en `prijs`. Het leesbare `bloeitijd`-tekstveld blijft.
+- `Ontwerp.canvas` (JSONB) bevat naast `elementen` nu ook `beplanting`
+  (geplaatste plant-instanties: id, plantId, x, y), gevalideerd met het
+  canvas-Zod-schema. Zie ADR-0008.
+- `ZoneSjabloon` + `ZoneSjabloonRegel` (regel verwijst via `soort` + `refId`
+  naar Element of Plant met relatieve positie) en `PlantPakket` +
+  `PlantPakketRegel` zijn echte tabellen (telbaar, querybaar). Bloei-helpers
+  staan in `lib/domain/bloei.ts`.
 
 ## Volledig Prisma-schema
 > Plaats dit in `prisma/schema.prisma`. Provider = postgresql.
