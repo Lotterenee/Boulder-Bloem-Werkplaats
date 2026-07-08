@@ -6,6 +6,19 @@ import { planten } from "./seed-data/planten";
 import { activiteiten, pakketten } from "./seed-data/educatie";
 import { lessen } from "./seed-data/educatie/index";
 import { LesSchema, PrintbladInhoudSchema } from "../lib/validators/les";
+import {
+  demoKlanten,
+  demoProjecten,
+  demoWensen,
+  demoTaken,
+  demoAanvragen,
+  demoOntwerp,
+  demoOfferte,
+  demoMetingen,
+  demoPakketKoppeling,
+} from "./seed-data/demo";
+import { berekenTotalen } from "../lib/domain/btw";
+import { ROLAFBAKENING } from "../lib/domain/rolafbakening";
 
 const prisma = new PrismaClient();
 
@@ -121,6 +134,104 @@ async function main() {
     }
   }
   console.log(`Lesbibliotheek: ${lessen.length} lessen, ${aantalPrintbladen} printbladen`);
+
+  // ---- Demo-klanten en projecten (alleen dev/preview) ----
+  // Nepdata zodat elk scherm gevuld is. Productie heeft SEED_DATA=false en
+  // komt hier nooit; wie de bibliotheekdata wel maar de nepklanten niet wil,
+  // zet SEED_DEMO=false.
+  if (process.env.SEED_DEMO === "false") {
+    console.log("SEED_DEMO=false, demo-klanten overgeslagen");
+    return;
+  }
+  await seedDemo();
+}
+
+async function seedDemo() {
+  for (const k of demoKlanten) {
+    const { id, ...data } = k;
+    const payload = { ...data, type: data.type as Prisma.KlantUncheckedCreateInput["type"] };
+    await prisma.klant.upsert({ where: { id }, update: payload, create: { id, ...payload } });
+  }
+  for (const p of demoProjecten) {
+    const { id, ...data } = p;
+    const payload = {
+      ...data,
+      fase: data.fase as Prisma.ProjectUncheckedCreateInput["fase"],
+      status: data.status as Prisma.ProjectUncheckedCreateInput["status"],
+    };
+    await prisma.project.upsert({ where: { id }, update: payload, create: { id, ...payload } });
+  }
+
+  // Child-records per project vervangen zodat de seed herhaalbaar blijft.
+  const projectIds = demoProjecten.map((p) => p.id);
+  await prisma.wens.deleteMany({ where: { projectId: { in: projectIds } } });
+  for (const w of demoWensen) {
+    await prisma.wens.create({
+      data: { ...w, bron: w.bron as Prisma.WensUncheckedCreateInput["bron"], prioriteit: w.prioriteit as Prisma.WensUncheckedCreateInput["prioriteit"] },
+    });
+  }
+
+  for (const t of demoTaken) {
+    const { id, ...data } = t;
+    const payload = { ...data, categorie: data.categorie as Prisma.TaakUncheckedCreateInput["categorie"] };
+    await prisma.taak.upsert({ where: { id }, update: payload, create: { id, ...payload } });
+  }
+
+  for (const a of demoAanvragen) {
+    const { id, ...data } = a;
+    const payload = { ...data, status: data.status as Prisma.SubsidieAanvraagUncheckedCreateInput["status"] };
+    await prisma.subsidieAanvraag.upsert({ where: { id }, update: payload, create: { id, ...payload } });
+  }
+
+  // Ontwerp + gekoppelde beplanting.
+  const { planten: ontwerpPlanten, ...ontwerpData } = demoOntwerp;
+  await prisma.ontwerp.upsert({
+    where: { id: ontwerpData.id },
+    update: { naam: ontwerpData.naam, versie: ontwerpData.versie, canvas: ontwerpData.canvas },
+    create: { ...ontwerpData, canvas: ontwerpData.canvas },
+  });
+  await prisma.ontwerpPlant.deleteMany({ where: { ontwerpId: ontwerpData.id } });
+  for (const op of ontwerpPlanten) {
+    await prisma.ontwerpPlant.create({ data: { ontwerpId: ontwerpData.id, ...op } });
+  }
+
+  // Offerte met btw-totalen (21%) en vaste rolafbakeningstekst.
+  const totalen = berekenTotalen([...demoOfferte.regels]);
+  await prisma.offerte.upsert({
+    where: { id: demoOfferte.id },
+    update: {
+      status: demoOfferte.status as Prisma.OfferteUncheckedCreateInput["status"],
+      regels: demoOfferte.regels,
+      totaalExcl: totalen.totaalExcl,
+      totaalIncl: totalen.totaalIncl,
+      rolafbakening: ROLAFBAKENING,
+    },
+    create: {
+      id: demoOfferte.id,
+      projectId: demoOfferte.projectId,
+      offertenummer: demoOfferte.offertenummer,
+      status: demoOfferte.status as Prisma.OfferteUncheckedCreateInput["status"],
+      regels: demoOfferte.regels,
+      totaalExcl: totalen.totaalExcl,
+      totaalIncl: totalen.totaalIncl,
+      rolafbakening: ROLAFBAKENING,
+    },
+  });
+
+  for (const m of demoMetingen) {
+    const { id, ...data } = m;
+    const payload = { ...data, type: data.type as Prisma.MetingUncheckedCreateInput["type"], waarnemingen: data.waarnemingen };
+    await prisma.meting.upsert({ where: { id }, update: payload, create: { id, ...payload } });
+  }
+
+  await prisma.educatiePakket.update({
+    where: { id: demoPakketKoppeling.pakketId },
+    data: { projectId: demoPakketKoppeling.projectId },
+  });
+
+  console.log(
+    `Demo: ${demoKlanten.length} klanten, ${demoProjecten.length} projecten, ${demoWensen.length} wensen, ${demoTaken.length} taken, ${demoAanvragen.length} aanvragen, 1 ontwerp, 1 offerte, ${demoMetingen.length} metingen`
+  );
 }
 
 main()

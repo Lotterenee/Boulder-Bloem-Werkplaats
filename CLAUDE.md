@@ -29,8 +29,12 @@ afwijkingen in `docs/afwijkingen.md`.
   migratie. Architectuurkeuze = nieuwe ADR in `docs/adr/`.
 - De seed (`prisma/seed.ts`) is idempotent (upserts op vaste id's), overschrijft
   nooit het wachtwoord van een bestaande gebruiker en slaat bij
-  `SEED_DATA=false` (productie) alleen de demo-data over; de inlog-gebruiker
-  wordt altijd gegarandeerd.
+  `SEED_DATA=false` (productie) alle demo-data over; de inlog-gebruiker
+  wordt altijd gegarandeerd. Drie lagen: (1) gebruiker (altijd), (2)
+  bibliotheekdata subsidies/elementen/planten/educatie/lesbibliotheek (tenzij
+  `SEED_DATA=false`), (3) nepklanten en projecten uit `seed-data/demo.ts`
+  (tenzij `SEED_DATA=false` of `SEED_DEMO=false`). Dev seedt alle drie; main
+  alleen de gebruiker.
 
 ## Lokaal draaien
 PostgreSQL nodig (zie `.env.example`). `npm install`, `npx prisma migrate dev`,
