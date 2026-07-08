@@ -37,6 +37,20 @@ implementatie bewust af; alles hier is klein en terug te draaien.
 - **Wachtwoord wijzigen** kan via Instellingen (het pakket noemde alleen
   handmatig via seed).
 
+## Inlog-account altijd gegarandeerd
+- Het seed-script maakt de inlog-gebruiker (`lotte@boulderbloem.nl`) **altijd**
+  aan, ook bij `SEED_DATA=false`. Zonder account kan niemand inloggen, ook niet
+  in productie of op een preview-omgeving die de demo-seed overslaat. Alleen de
+  demo-data (subsidies, elementen, planten, educatie) valt onder de
+  `SEED_DATA=false`-uitzondering. De upsert overschrijft nooit een gewijzigd
+  wachtwoord.
+- De Railway-startCommand laat een eventuele seed-fout de app niet blokkeren
+  (`... || echo ...`); alleen een gefaalde migratie stopt de deploy. Zo blijft
+  de app bereikbaar en zijn seed-problemen zichtbaar in de Railway-logs.
+- `authorize()` vangt databasefouten expliciet en logt de echte oorzaak, zodat
+  een ontbrekende tabel of verbinding niet stil als "onjuiste inloggegevens"
+  verdwijnt.
+
 ## Seed-data
 - De regeling "Themafonds Groenblauwe Schoolpleinen Zuid-Holland" is geseed met
   status **onzeker** en een waarschuwing in de voorwaarden (vermoedelijk

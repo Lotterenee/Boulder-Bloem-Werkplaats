@@ -5,27 +5,32 @@ import { elementen } from "./seed-data/elementen";
 import { planten } from "./seed-data/planten";
 import { activiteiten, pakketten } from "./seed-data/educatie";
 
-// Productie heeft SEED_DATA=false (gezet door de harness); dev- en
-// feature-omgevingen seeden normaal. Het script is idempotent (upserts op
-// vaste id's) en overschrijft nooit een gewijzigd wachtwoord.
-if (process.env.SEED_DATA === "false") {
-  console.log("SEED_DATA=false, seed overgeslagen");
-  process.exit(0);
-}
-
 const prisma = new PrismaClient();
 
 const STANDAARD_WACHTWOORD = "kas-groeit-2026";
 
-async function main() {
-  // ---- Gebruiker (wachtwoord alleen bij aanmaken, nooit overschrijven) ----
+// De inlog-gebruiker wordt ALTIJD gegarandeerd (ook bij SEED_DATA=false):
+// zonder account kan niemand inloggen, ook niet in productie. Idempotent en
+// het wachtwoord wordt alleen bij eerste aanmaak gezet, nooit overschreven.
+async function ensureUser() {
   const passwordHash = await bcrypt.hash(STANDAARD_WACHTWOORD, 12);
   await prisma.user.upsert({
     where: { email: "lotte@boulderbloem.nl" },
     update: {},
     create: { email: "lotte@boulderbloem.nl", naam: "Lotte", passwordHash },
   });
-  console.log("Gebruiker: lotte@boulderbloem.nl (wachtwoord alleen bij eerste aanmaak gezet)");
+  console.log("Gebruiker gegarandeerd: lotte@boulderbloem.nl (wachtwoord alleen bij eerste aanmaak gezet)");
+}
+
+async function main() {
+  await ensureUser();
+
+  // Demo-data (subsidies, elementen, planten, educatie) wordt in productie
+  // overgeslagen via SEED_DATA=false; de gebruiker hierboven blijft wel staan.
+  if (process.env.SEED_DATA === "false") {
+    console.log("SEED_DATA=false, demo-data overgeslagen (gebruiker wel aangemaakt)");
+    return;
+  }
 
   // ---- Subsidieregelingen ----
   for (const s of subsidies) {

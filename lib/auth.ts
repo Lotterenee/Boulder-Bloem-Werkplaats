@@ -18,13 +18,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       async authorize(credentials) {
         const parsed = loginSchema.safeParse(credentials);
         if (!parsed.success) return null;
-        const user = await prisma.user.findUnique({
-          where: { email: parsed.data.email.toLowerCase().trim() },
-        });
-        if (!user) return null;
-        const ok = await bcrypt.compare(parsed.data.password, user.passwordHash);
-        if (!ok) return null;
-        return { id: user.id, email: user.email, name: user.naam };
+        try {
+          const user = await prisma.user.findUnique({
+            where: { email: parsed.data.email.toLowerCase().trim() },
+          });
+          if (!user) {
+            console.warn("[login] geen gebruiker gevonden voor dit e-mailadres");
+            return null;
+          }
+          const ok = await bcrypt.compare(parsed.data.password, user.passwordHash);
+          if (!ok) {
+            console.warn("[login] onjuist wachtwoord");
+            return null;
+          }
+          return { id: user.id, email: user.email, name: user.naam };
+        } catch (e) {
+          // Een DB-fout (tabellen ontbreken, geen verbinding) mag hier niet als
+          // "onjuiste inloggegevens" verdwijnen: log de echte oorzaak.
+          console.error("[login] databasefout tijdens authorize:", e);
+          return null;
+        }
       },
     }),
   ],

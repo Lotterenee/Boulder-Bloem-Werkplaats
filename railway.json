@@ -16,7 +16,7 @@
     ]
   },
   "deploy": {
-    "startCommand": "npx prisma migrate deploy && npx tsx prisma/seed.ts && npm run start",
+    "startCommand": "npx prisma migrate deploy && (npx tsx prisma/seed.ts || echo 'seed had issues, app start toch') && npm run start",
     "healthcheckPath": "/api/health",
     "healthcheckTimeout": 120,
     "restartPolicyType": "ON_FAILURE",
