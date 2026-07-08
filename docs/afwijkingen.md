@@ -67,6 +67,17 @@ implementatie bewust af; alles hier is klein en terug te draaien.
   em-dashes zijn vervangen door en-dashes (repo-regel). Eén printblad (het
   bordje bij de hooidag) gebruikt het html-escape-blok, zoals voorzien.
 
+## Demo-data (nepklanten) op dev
+- Naast de bibliotheekdata seedt `prisma/seed-data/demo.ts` een set nepklanten,
+  projecten (over alle 7 fasen), wensen, taken, subsidieaanvragen, een ontwerp
+  met beplanting, een offerte en twee metingen, zodat elk scherm op dev/preview
+  gevuld is. Idempotent (vaste id's met prefix `demo-`; child-records worden per
+  project vervangen).
+- Gated met `SEED_DEMO`: draait wanneer de demo-data is toegestaan
+  (`SEED_DATA !== "false"`) en `SEED_DEMO !== "false"`. Productie heeft
+  `SEED_DATA=false` en krijgt dit dus nooit; wie op dev wel de bibliotheken maar
+  geen nepklanten wil, zet `SEED_DEMO=false`.
+
 ## Seed-data
 - De regeling "Themafonds Groenblauwe Schoolpleinen Zuid-Holland" is geseed met
   status **onzeker** en een waarschuwing in de voorwaarden (vermoedelijk
