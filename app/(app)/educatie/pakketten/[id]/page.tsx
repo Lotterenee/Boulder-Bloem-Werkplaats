@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import {
@@ -57,7 +58,12 @@ export default async function PakketDetailPage({
               {pakket.activiteiten.map((k) => (
                 <li key={k.id} className="flex items-center justify-between gap-2 py-2">
                   <div>
-                    <p className="text-sm font-semibold">{k.activiteit.titel}</p>
+                    <Link
+                      href={`/educatie/activiteiten/${k.activiteitId}`}
+                      className="text-sm font-semibold text-moss-deep hover:text-clay-deep"
+                    >
+                      {k.activiteit.titel}
+                    </Link>
                     <p className="text-xs text-ink-soft">
                       {k.activiteit.duurMinuten
                         ? `${k.activiteit.duurMinuten} min · `
