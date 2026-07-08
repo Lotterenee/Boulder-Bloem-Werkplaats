@@ -2,9 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { tekst, getalOfNull } from "@/lib/forms";
 import { canvasSchema, LEEG_CANVAS } from "@/lib/validators/canvas";
+import { berekenTotalen, BTW_PCT } from "@/lib/domain/btw";
+import { ROLAFBAKENING } from "@/lib/domain/rolafbakening";
+import { offerteRegelsSchema } from "@/lib/validators/offerte";
 
 export async function createOntwerp(fd: FormData) {
   const projectId = tekst(fd, "projectId");
@@ -84,4 +88,112 @@ export async function setOntwerpPlant(ontwerpId: string, fd: FormData) {
 export async function removeOntwerpPlant(id: string) {
   const op = await prisma.ontwerpPlant.delete({ where: { id } });
   revalidatePath(`/ontwerpstudio/${op.ontwerpId}`);
+}
+
+// ---------- Eigen zone-sjablonen (Fase 3c) ----------
+
+const eigenRegelSchema = z.array(
+  z.object({
+    soort: z.enum(["element", "plant"]),
+    refId: z.string(),
+    relXM: z.number(),
+    relYM: z.number(),
+    rotatie: z.number(),
+    schaal: z.number(),
+  })
+);
+
+/** Bewaar een selectie als eigen zone-sjabloon met thumbnail. */
+export async function createEigenSjabloon(
+  ontwerpId: string,
+  naam: string,
+  regelsJson: string,
+  thumbnail: string | null
+) {
+  const regels = eigenRegelSchema.parse(JSON.parse(regelsJson));
+  if (regels.length === 0) throw new Error("Selectie is leeg");
+  await prisma.zoneSjabloon.create({
+    data: {
+      naam: naam.trim() || "Eigen sjabloon",
+      categorie: "eigen",
+      eigen: true,
+      thumbnail: thumbnail && thumbnail.startsWith("data:image") ? thumbnail : null,
+      regels: {
+        create: regels.map((r) => ({
+          soort: r.soort,
+          refId: r.refId,
+          relXM: r.relXM,
+          relYM: r.relYM,
+          rotatie: r.rotatie,
+          schaal: r.schaal,
+        })),
+      },
+    },
+  });
+  revalidatePath(`/ontwerpstudio/${ontwerpId}`);
+}
+
+export async function deleteEigenSjabloon(ontwerpId: string, sjabloonId: string) {
+  await prisma.zoneSjabloon.delete({ where: { id: sjabloonId } });
+  revalidatePath(`/ontwerpstudio/${ontwerpId}`);
+}
+
+// ---------- Plantpakket als offerte-regel (US-3c.4) ----------
+
+/** Voeg een plantpakket als offerte-regel toe aan het project van dit ontwerp. */
+export async function pakketNaarOfferte(ontwerpId: string, pakketId: string) {
+  const [ontwerp, pakket] = await Promise.all([
+    prisma.ontwerp.findUniqueOrThrow({ where: { id: ontwerpId }, select: { projectId: true } }),
+    prisma.plantPakket.findUniqueOrThrow({
+      where: { id: pakketId },
+      include: { regels: { include: { plant: true } } },
+    }),
+  ]);
+
+  const stuksprijs = pakket.regels.reduce(
+    (som, r) => som + r.aantal * Number(r.plant.prijs ?? 0),
+    0
+  );
+  const nieuweRegel = {
+    omschrijving: `Plantpakket: ${pakket.naam}`,
+    aantal: 1,
+    stuksprijs,
+    btwPct: BTW_PCT,
+  };
+
+  // Voeg toe aan de nieuwste concept-offerte, of maak een nieuwe.
+  const bestaand = await prisma.offerte.findFirst({
+    where: { projectId: ontwerp.projectId, status: "concept" },
+    orderBy: { datum: "desc" },
+  });
+
+  if (bestaand) {
+    const regels = offerteRegelsSchema.safeParse(bestaand.regels);
+    const nieuweRegels = [...(regels.success ? regels.data : []), nieuweRegel];
+    const totalen = berekenTotalen(nieuweRegels);
+    await prisma.offerte.update({
+      where: { id: bestaand.id },
+      data: { regels: nieuweRegels, totaalExcl: totalen.totaalExcl, totaalIncl: totalen.totaalIncl },
+    });
+    revalidatePath(`/offertes/${bestaand.id}`);
+    revalidatePath(`/projecten/${ontwerp.projectId}`);
+    return;
+  }
+
+  const totalen = berekenTotalen([nieuweRegel]);
+  const jaar = new Date().getFullYear();
+  const aantal = await prisma.offerte.count({
+    where: { offertenummer: { startsWith: `OFF-${jaar}-` } },
+  });
+  await prisma.offerte.create({
+    data: {
+      projectId: ontwerp.projectId,
+      offertenummer: `OFF-${jaar}-${String(aantal + 1).padStart(3, "0")}`,
+      regels: [nieuweRegel],
+      totaalExcl: totalen.totaalExcl,
+      totaalIncl: totalen.totaalIncl,
+      rolafbakening: ROLAFBAKENING,
+    },
+  });
+  revalidatePath(`/projecten/${ontwerp.projectId}`);
 }

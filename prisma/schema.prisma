@@ -231,11 +231,20 @@ model Plant {
   categorie            String?
   inheems              Boolean        @default(false)
   waardplantVoor       String?
-  bloeitijd            String?
+  bloeitijd            String? // leesbare vrije tekst; bloeimaanden is de rekenbron
   licht                String?
   bodem                String?
   giftig               Boolean        @default(false)
+  bloeimaanden         Int            @default(0) // 12-bits masker, bit 0 = januari
+  wintergroen          Boolean        @default(false)
+  bloeikleur           String? // hex, voor canvas- en paletkleuring
+  drachtNectar         Int            @default(0) // 0 t/m 5 (imker-schaal)
+  drachtPollen         Int            @default(0) // 0 t/m 5
+  hoogteM              Decimal?       @db.Decimal(4, 2) // indicatieve hoogte in meters
+  diameterM            Decimal?       @db.Decimal(4, 2) // indicatieve kroon-/poldiameter
+  prijs                Decimal?       @db.Decimal(10, 2) // indicatieve prijs per stuk
   ontwerpen            OntwerpPlant[]
+  pakketten            PlantPakketRegel[]
 }
 
 model OntwerpPlant {
@@ -370,4 +379,52 @@ model Partner {
   contact  String?
   tarieven String?
   notities String?
+}
+
+// ---------- ZONE-SJABLONEN & PLANTPAKKETTEN (Fase 3c) ----------
+enum SjabloonRegelSoort {
+  element
+  plant
+}
+
+model ZoneSjabloon {
+  id        String              @id @default(cuid())
+  naam      String
+  categorie String // klim, water, moestuin, rust, bloemenweide, eigen
+  eigen     Boolean             @default(false)
+  thumbnail String? // data-URL van canvas-snapshot
+  regels    ZoneSjabloonRegel[]
+  createdAt DateTime            @default(now())
+}
+
+model ZoneSjabloonRegel {
+  id         String             @id @default(cuid())
+  sjabloonId String
+  sjabloon   ZoneSjabloon       @relation(fields: [sjabloonId], references: [id], onDelete: Cascade)
+  soort      SjabloonRegelSoort
+  refId      String // Element.id of Plant.id, afhankelijk van soort
+  relXM      Decimal            @db.Decimal(6, 2) // relatieve positie t.o.v. groepsanker (m)
+  relYM      Decimal            @db.Decimal(6, 2)
+  rotatie    Decimal            @default(0) @db.Decimal(5, 1)
+  schaal     Decimal            @default(1) @db.Decimal(4, 2)
+
+  @@index([sjabloonId])
+}
+
+model PlantPakket {
+  id     String             @id @default(cuid())
+  naam   String
+  doel   String? // bv. "vlinderlint", "winterskelet + vroege dracht"
+  regels PlantPakketRegel[]
+}
+
+model PlantPakketRegel {
+  id       String      @id @default(cuid())
+  pakketId String
+  pakket   PlantPakket @relation(fields: [pakketId], references: [id], onDelete: Cascade)
+  plantId  String
+  plant    Plant       @relation(fields: [plantId], references: [id])
+  aantal   Int         @default(1)
+
+  @@index([pakketId])
 }
