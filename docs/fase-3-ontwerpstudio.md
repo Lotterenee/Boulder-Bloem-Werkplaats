@@ -54,6 +54,9 @@ ontwerphulp-wizard, sjablonen en ontwerpcoach met live checks.
 - [ ] Zijbalk: materialen, prijs, telling WAS-soort (live).
 - [ ] Valruimte-ringen zichtbaar; coach-checks geven waarschuwingen.
 - [ ] Wizard genereert een startopzet; minstens 1 sjabloon laadbaar.
+- [ ] Vervolg in Fase 3b/3c: seizoensbloei, canvas-UX (snappen, dupliceren,
+      undo/redo), zone-sjablonen en plantpakketten (zie
+      fase-3b-3c-seizoensbloei-zones.md).
 
 ## Testplan
 - Unit: valruimte-overlapdetectie, inheems-% berekening, prijs-som.

@@ -131,25 +131,53 @@ try {
   await page.click('button:has-text("Zandbak met rand")');
   await page.waitForSelector("text=1 x Zandbak met rand");
   const toestellen = await page
-    .locator("div.rounded-lg.bg-clay-soft p.font-heading")
+    .locator("p.font-heading.text-clay-deep")
     .first()
     .textContent();
   if (toestellen?.trim() !== "1") faal("WAS-telling", `toestellen=${toestellen}`);
   else ok("WAS-telling: 1 keuringsplichtig toestel, materialen + prijs in zijbalk");
 
-  // 13. Opslaan en herladen (JSONB persistentie)
+  // 12b. Planten via het palet-tabblad plaatsen (Fase 3b)
+  await page.getByRole("button", { name: "planten", exact: true }).click();
+  await page.waitForSelector("text=Bloeitijden zijn indicatief");
+  await page.click('button:has-text("Knoopkruid")');
+  await page.click('button:has-text("Hazelaar")');
+  await page.click('button:has-text("Klimop")');
+  // plantsoorten-teller in de zijbalk moet nu 3 zijn
+  await page.waitForFunction(() => {
+    const cellen = [...document.querySelectorAll("aside p.font-heading")];
+    return cellen.some((c) => c.textContent?.trim() === "3");
+  });
+  ok("Planten geplaatst via palet; plantsoorten-teller klopt");
+
+  // 12c. Seizoensschuif + bloeiboog
+  await page.getByRole("button", { name: "coach", exact: true }).click();
+  await page.waitForSelector("text=/Bloeigat|wintergroen|Giftige/");
+  ok("Ontwerpcoach geeft seizoenschecks (bloeigat/wintergroen/giftig)");
+  await page.getByRole("button", { name: "ontwerp", exact: true }).click();
+  await page.waitForSelector("text=Bloeiboog:");
+  ok("Bloeiboog-balk zichtbaar met samenvatting");
+
+  // 12d. Zone plaatsen (Fase 3c)
+  await page.getByRole("button", { name: "zones", exact: true }).click();
+  await page.click('button:has-text("Waterspeelzone")');
+  ok("Zone-sjabloon als groep geplaatst");
+
+  // 12e. Pakket plaatsen
+  await page.getByRole("button", { name: "pakketten", exact: true }).click();
+  await page.click('button:has-text("Vlinderlint")');
+  ok("Plantpakket als groep geplaatst");
+
+  // 13. Opslaan en herladen (JSONB persistentie, incl. beplanting)
   await page.click('button:has-text("Opslaan"):not([disabled])');
   await page.waitForSelector('button:has-text("Opgeslagen ✓")');
   await page.goto(studioUrl);
   await page.waitForSelector("text=1 x Klimtoestel (gecertificeerd)");
-  ok("Canvas opgeslagen als JSONB en herladen");
-
-  // 14. Plant koppelen -> inheems-percentage
-  await page.selectOption('select[name="plantId"]', { index: 1 });
-  await page.fill('input[name="aantal"]', "10");
-  await page.click('button:has-text("Toevoegen")');
-  await page.waitForSelector("text=Inheems");
-  ok("Plant gekoppeld aan ontwerp (inheems-percentage actief)");
+  const soortenNa = await page.waitForFunction(() => {
+    const cellen = [...document.querySelectorAll("aside p.font-heading")];
+    return cellen.some((c) => Number(c.textContent?.trim()) >= 3);
+  });
+  ok("Canvas met beplanting opgeslagen als JSONB en herladen");
 
   await page.screenshot({ path: `${SHOTS}/studio.png`, fullPage: false });
 

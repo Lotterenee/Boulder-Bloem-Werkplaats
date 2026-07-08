@@ -36,10 +36,10 @@ export async function genereerOfferte(fd: FormData) {
   if (ontwerpId) {
     const ontwerp = await prisma.ontwerp.findUniqueOrThrow({
       where: { id: ontwerpId },
-      include: { planten: { include: { plant: true } } },
     });
     const canvas = canvasSchema.safeParse(ontwerp.canvas);
     if (canvas.success) {
+      // Elementen: geteld per soort.
       const aantallen = new Map<string, number>();
       for (const el of canvas.data.elementen) {
         aantallen.set(el.elementId, (aantallen.get(el.elementId) ?? 0) + 1);
@@ -55,14 +55,24 @@ export async function genereerOfferte(fd: FormData) {
           btwPct: BTW_PCT,
         });
       }
-    }
-    for (const op of ontwerp.planten) {
-      regels.push({
-        omschrijving: `Beplanting: ${op.plant.naamNL}`,
-        aantal: op.aantal,
-        stuksprijs: 0, // prijs per plant invullen bij het uitwerken
-        btwPct: BTW_PCT,
-      });
+      // Beplanting: geteld per soort vanaf het canvas (Fase 3b).
+      const plantAantallen = new Map<string, number>();
+      for (const bp of canvas.data.beplanting) {
+        plantAantallen.set(bp.plantId, (plantAantallen.get(bp.plantId) ?? 0) + 1);
+      }
+      if (plantAantallen.size > 0) {
+        const planten = await prisma.plant.findMany({
+          where: { id: { in: [...plantAantallen.keys()] } },
+        });
+        for (const plant of planten) {
+          regels.push({
+            omschrijving: `Beplanting: ${plant.naamNL}`,
+            aantal: plantAantallen.get(plant.id) ?? 0,
+            stuksprijs: Number(plant.prijs ?? 0),
+            btwPct: BTW_PCT,
+          });
+        }
+      }
     }
   }
 

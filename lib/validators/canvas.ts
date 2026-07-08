@@ -21,6 +21,18 @@ export const canvasSchema = z.object({
       schaal: z.number().positive(),
     })
   ),
+  // Beplanting op het canvas (Fase 3b): geplaatste plant-instanties. Optioneel
+  // zodat oudere ontwerpen zonder dit veld geldig blijven (niet-brekend).
+  beplanting: z
+    .array(
+      z.object({
+        id: z.string(),
+        plantId: z.string(),
+        x: z.number(),
+        y: z.number(),
+      })
+    )
+    .default([]),
 });
 
 export type CanvasData = z.infer<typeof canvasSchema>;
@@ -29,4 +41,7 @@ export const LEEG_CANVAS: CanvasData = {
   terrein: { breedteM: 20, diepteM: 15 },
   raster: 1,
   elementen: [],
+  beplanting: [],
 };
+
+export type CanvasBeplanting = CanvasData["beplanting"][number];
