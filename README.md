@@ -4,8 +4,9 @@ Interne werkapplicatie van **Boulder Bloem** - ecologische natuurspeelplekken vo
 scholen, BSO/kinderopvang, particulieren, recreatie en gemeenten.
 
 De Kas is één plek voor: klanten & projecten, de 7 projectfasen, wensen & taken,
-een subsidieradar, een ontwerpstudio op schaal, educatiepakketten, offertes met
-btw, plant- en elementbibliotheken, partners-CRM en biodiversiteitsmetingen.
+een subsidieradar, een ontwerpstudio op schaal, educatiepakketten met een
+lesbibliotheek (10 uitgewerkte lessen + printbladen, los printbaar), offertes
+met btw, plant- en elementbibliotheken, partners-CRM en biodiversiteitsmetingen.
 
 ## Wat is dit?
 Eén gebruiker (Lotte). Eén app. Ruggengraat = **Project**. Alles hangt aan een project.

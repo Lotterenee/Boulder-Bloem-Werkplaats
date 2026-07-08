@@ -16,6 +16,7 @@ erDiagram
     Subsidie ||--o{ SubsidieAanvraag : voor
     EducatiePakket ||--o{ PakketActiviteit : bundelt
     EducatieActiviteit ||--o{ PakketActiviteit : in
+    EducatieActiviteit ||--o{ Printblad : heeft
     Element ||.. Ontwerp : "gebruikt via canvas JSONB"
     Partner }o..o{ Project : "betrokken (los)"
 ```
@@ -217,10 +218,23 @@ model EducatieActiviteit {
   leeftijdTot   Int?
   seizoen       String?
   duurMinuten   Int?
-  doelen        String? // kerndoelen / pedagogische doelen
+  doelen        String? // korte samenvatting; rijke doelen in les.doelenSchool/Bso
   benodigdheden String?
   prijs         Decimal? @db.Decimal(10,2)
+  les           Json?    // JSONB (Fase 4b): rijke lesuitwerking (LesSchema); null = nog niet uitgewerkt
   pakketten     PakketActiviteit[]
+  printbladen   Printblad[]
+}
+
+model Printblad { // Fase 4b, zie ADR-0007
+  id           String @id @default(cuid())
+  activiteitId String
+  activiteit   EducatieActiviteit @relation(fields: [activiteitId], references: [id], onDelete: Cascade)
+  titel        String
+  soort        String // telkaart | werkblad | poster | protocol | bouwkaart | ...
+  volgorde     Int    @default(0)
+  inhoud       Json   // JSONB: { tag, blokken[] } (PrintbladInhoudSchema)
+  @@index([activiteitId])
 }
 
 model EducatiePakket {
@@ -284,6 +298,8 @@ model Partner {
 - **Element.soort** codeert het WAS 2023-onderscheid; de studio telt hierop.
 - **Ontwerp.canvas / Offerte.regels / Meting.waarnemingen = JSONB** (ADR-0004),
   gevalideerd met Zod in `lib/validators/`.
+- **EducatieActiviteit.les / Printblad.inhoud = JSONB** (Fase 4b, ADR-0007),
+  gevalideerd met `LesSchema` / `PrintbladInhoudSchema` in `lib/validators/les.ts`.
 - **`onDelete`-regels:** child-records van een Project cascaden mee; Taak en
   EducatiePakket zijn optioneel gekoppeld → `SetNull`.
 

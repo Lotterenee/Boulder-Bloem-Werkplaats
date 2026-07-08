@@ -1,24 +1,25 @@
 # De Kas (Boulder Bloem)
 
 Interne werkapplicatie van Boulder Bloem: klanten, projecten (7 fasen),
-wensen/taken, subsidieradar, ontwerpstudio (react-konva), educatie, offertes,
-bibliotheken en biodiversiteitsmetingen. Eén gebruiker (Lotte), Nederlands als
-UI-taal.
+wensen/taken, subsidieradar, ontwerpstudio (react-konva), educatie (incl.
+lesbibliotheek met printbladen), offertes, bibliotheken en
+biodiversiteitsmetingen. Eén gebruiker (Lotte), Nederlands als UI-taal.
 
 Lees eerst `docs/00-visie-en-context.md` en `docs/01-architectuur.md`. De
 requirements per fase staan in `docs/fase-*.md`; bewuste implementatie-
 afwijkingen in `docs/afwijkingen.md`.
 
 ## Stack & conventies
-- Next.js 15 App Router (React 19, TypeScript), monoliet. Route-groep `(app)`
-  is beschermd (Auth.js v5 middleware), `(auth)` en `/api/health` +
-  `/api/subsidiescan` zijn publiek.
+- Next.js 15 App Router (React 19, TypeScript), monoliet. Route-groepen `(app)`
+  en `(print)` zijn beschermd (Auth.js v5 middleware); `(auth)` en
+  `/api/health` + `/api/subsidiescan` zijn publiek.
 - Data lezen in Server Components via Prisma; muteren via Server Actions in
   `lib/actions/*` met Zod-validatie (`lib/validators/*`).
 - Nooit `new PrismaClient()` in componenten: gebruik `import { prisma } from
   "@/lib/prisma"` (singleton).
-- JSONB-velden (`Ontwerp.canvas`, `Offerte.regels`, `Meting.waarnemingen`)
-  altijd door hun Zod-schema halen bij lezen én schrijven.
+- JSONB-velden (`Ontwerp.canvas`, `Offerte.regels`, `Meting.waarnemingen`,
+  `EducatieActiviteit.les`, `Printblad.inhoud`) altijd door hun Zod-schema
+  halen bij lezen én schrijven.
 - Domeinlogica (btw, rolafbakening, coach-checks) leeft in `lib/domain/` en
   `components/studio/`; btw-percentage is een constante in `lib/domain/btw.ts`.
 - Huisstijl-tokens staan in `tailwind.config.ts` (zie
@@ -27,8 +28,9 @@ afwijkingen in `docs/afwijkingen.md`.
 - Schemawijziging = `npx prisma migrate dev --name <naam>` + commit van de
   migratie. Architectuurkeuze = nieuwe ADR in `docs/adr/`.
 - De seed (`prisma/seed.ts`) is idempotent (upserts op vaste id's), overschrijft
-  nooit het wachtwoord van een bestaande gebruiker en stopt bij
-  `SEED_DATA=false` (productie).
+  nooit het wachtwoord van een bestaande gebruiker en slaat bij
+  `SEED_DATA=false` (productie) alleen de demo-data over; de inlog-gebruiker
+  wordt altijd gegarandeerd.
 
 ## Lokaal draaien
 PostgreSQL nodig (zie `.env.example`). `npm install`, `npx prisma migrate dev`,

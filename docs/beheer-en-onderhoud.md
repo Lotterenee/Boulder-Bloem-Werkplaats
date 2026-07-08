@@ -35,7 +35,17 @@
 
 ## Seed opnieuw draaien
 `npx prisma db seed` (command staat in `prisma.config.ts`: `tsx prisma/seed.ts`).
-Seed is idempotent: eerst `deleteMany` per bibliotheektabel, dan opnieuw invoeren.
+Seed is idempotent: upserts op vaste id's; printbladen worden per les vervangen.
+De inlog-gebruiker wordt altijd gegarandeerd, ook bij `SEED_DATA=false`
+(zie `afwijkingen.md`); het wachtwoord wordt nooit overschreven.
+
+## Smoke test
+`node scripts/smoke-test.mjs` doorloopt met Playwright alle kernflows (login,
+klant → project → wensen/taken, ontwerpstudio, subsidies, educatie incl.
+lesbibliotheek en print, offerte, meting, publiek subsidiescan-endpoint) tegen
+een draaiende app met vers geseede database. Configuratie via env-vars:
+`SMOKE_BASE` (standaard `http://127.0.0.1:3100`), `CHROMIUM_PATH` en
+`SMOKE_SHOTS` (map voor screenshots).
 
 ## Hoe voer ik een wijziging door?
 1. Schemawijziging → `schema.prisma` aanpassen → `npx prisma migrate dev --name <naam>`.
