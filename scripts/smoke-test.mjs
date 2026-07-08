@@ -189,6 +189,27 @@ try {
   await page.waitForSelector("main a[href^='/educatie/pakketten/']");
   ok("Bestaand educatiepakket aan project gekoppeld");
 
+  // 18b. Lesbibliotheek: overzicht, lesdetail, printweergave (Fase 4b)
+  await page.goto(`${BASE}/educatie/lesbibliotheek`);
+  await page.waitForSelector("text=De grote soortentelling");
+  const lesRijen = await page.locator("tbody tr").count();
+  if (lesRijen !== 10) faal("Lesbibliotheek-overzicht", `${lesRijen} lessen i.p.v. 10`);
+  else ok("Lesbibliotheek toont 10 uitgewerkte lessen");
+
+  await page.click('a:has-text("De grote soortentelling")');
+  await page.waitForSelector("text=Zeg bijvoorbeeld:");
+  await page.waitForSelector("text=Telprotocol");
+  await page.waitForSelector("text=Verzamelblad soortentelling");
+  ok("Lesdetail: draaiboek met voorbeeldzinnen en beide printbladen zichtbaar");
+
+  const lesUrl = page.url();
+  await page.goto(`${lesUrl}/print`);
+  await page.waitForSelector("text=Afronding & mee terug");
+  const zijbalkAanwezig = await page.locator('nav[aria-label="Hoofdnavigatie"]').count();
+  if (zijbalkAanwezig > 0) faal("Printweergave", "zijbalk aanwezig in printroute");
+  else ok("Printweergave zonder app-navigatie werkt");
+  await page.goto(lesUrl);
+
   // 19. Dashboard toont alles
   await page.goto(`${BASE}/dashboard`);
   await page.waitForSelector("text=Groen schoolplein Regenboog");

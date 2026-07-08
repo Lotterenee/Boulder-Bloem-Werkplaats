@@ -51,6 +51,19 @@ implementatie bewust af; alles hier is klein en terug te draaien.
   een ontbrekende tabel of verbinding niet stil als "onjuiste inloggegevens"
   verdwijnt.
 
+## Lesbibliotheek (Fase 4b)
+- `LesSchema` heeft een extra optioneel veld `nummer` (werkboek-volgorde) dat
+  niet in de oorspronkelijke requirements stond; het stuurt de volgorde en het
+  nummer in het lesbibliotheek-overzicht.
+- De 10 lessen hergebruiken waar mogelijk de bestaande activiteit-id's uit de
+  Fase-4-seed (wilgen, moestuin, insectenhotel, vogels, waterdiertjes), zodat
+  pakket-koppelingen intact blijven; titels en prijzen zijn bijgewerkt naar
+  het werkboek. De overige 5 lessen zijn nieuwe activiteiten (ea-les-*).
+  Oudere activiteiten zonder lesuitwerking blijven gewoon bestaan.
+- De lesinhoud is programmatisch 1-op-1 uit het werkboek-HTML overgenomen;
+  em-dashes zijn vervangen door en-dashes (repo-regel). Eén printblad (het
+  bordje bij de hooidag) gebruikt het html-escape-blok, zoals voorzien.
+
 ## Seed-data
 - De regeling "Themafonds Groenblauwe Schoolpleinen Zuid-Holland" is geseed met
   status **onzeker** en een waarschuwing in de voorwaarden (vermoedelijk

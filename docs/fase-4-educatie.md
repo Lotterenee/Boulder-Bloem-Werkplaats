@@ -27,6 +27,8 @@ Activiteitenbibliotheek + pakketten samenstellen met automatische prijsberekenin
 - [ ] Pakket samenstellen met live totaalprijs.
 - [ ] Koppeling aan project + statusbeheer.
 - [ ] Seed-data geladen.
+- [ ] Lesbibliotheek: 10 uitgewerkte lessen + 12 printbladen als lescontent
+      bij de activiteiten (zie fase-4b-lesbibliotheek.md).
 
 ## Risico's
 - Kerndoelen worden landelijk herzien; `doelen` is vrije tekst → geen harde koppeling.

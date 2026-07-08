@@ -296,10 +296,24 @@ model EducatieActiviteit {
   leeftijdTot   Int?
   seizoen       String?
   duurMinuten   Int?
-  doelen        String? // kerndoelen / pedagogische doelen
+  doelen        String? // korte samenvatting; rijke doelen in les.doelenSchool/Bso
   benodigdheden String?
   prijs         Decimal?           @db.Decimal(10, 2)
+  les           Json? // rijke lesuitwerking (LesSchema); null = nog niet uitgewerkt
   pakketten     PakketActiviteit[]
+  printbladen   Printblad[]
+}
+
+model Printblad {
+  id           String             @id @default(cuid())
+  activiteitId String
+  activiteit   EducatieActiviteit @relation(fields: [activiteitId], references: [id], onDelete: Cascade)
+  titel        String
+  soort        String // telkaart | werkblad | poster | protocol | bouwkaart | ...
+  volgorde     Int                @default(0)
+  inhoud       Json // { tag, blokken[] } (PrintbladInhoudSchema)
+
+  @@index([activiteitId])
 }
 
 model EducatiePakket {

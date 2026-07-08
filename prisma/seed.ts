@@ -4,6 +4,8 @@ import { subsidies, LAATST_GECHECKT } from "./seed-data/subsidies";
 import { elementen } from "./seed-data/elementen";
 import { planten } from "./seed-data/planten";
 import { activiteiten, pakketten } from "./seed-data/educatie";
+import { lessen } from "./seed-data/educatie/index";
+import { LesSchema, PrintbladInhoudSchema } from "../lib/validators/les";
 
 const prisma = new PrismaClient();
 
@@ -81,6 +83,44 @@ async function main() {
     }
   }
   console.log(`Educatie: ${activiteiten.length} activiteiten, ${pakketten.length} pakketten`);
+
+  // ---- Lesbibliotheek (Fase 4b): 10 uitgewerkte lessen + printbladen ----
+  // Zod bewaakt het JSONB-contract bij het seeden; printbladen worden per
+  // activiteit vervangen (deleteMany + create) zodat de seed herhaalbaar is.
+  let aantalPrintbladen = 0;
+  for (const lesRecord of lessen) {
+    const lesInhoud = LesSchema.parse(lesRecord.les);
+    const activiteitData = {
+      titel: lesRecord.titel,
+      leeftijdVan: lesRecord.leeftijdVan,
+      leeftijdTot: lesRecord.leeftijdTot,
+      seizoen: lesRecord.seizoen,
+      duurMinuten: lesRecord.duurMinuten,
+      prijs: lesRecord.prijs,
+      omschrijving: lesRecord.omschrijving,
+      doelen: lesRecord.doelen,
+      les: lesInhoud,
+    };
+    await prisma.educatieActiviteit.upsert({
+      where: { id: lesRecord.id },
+      update: activiteitData,
+      create: { id: lesRecord.id, ...activiteitData },
+    });
+    await prisma.printblad.deleteMany({ where: { activiteitId: lesRecord.id } });
+    for (const pb of lesRecord.printbladen) {
+      await prisma.printblad.create({
+        data: {
+          activiteitId: lesRecord.id,
+          titel: pb.titel,
+          soort: pb.soort,
+          volgorde: pb.volgorde,
+          inhoud: PrintbladInhoudSchema.parse(pb.inhoud),
+        },
+      });
+      aantalPrintbladen++;
+    }
+  }
+  console.log(`Lesbibliotheek: ${lessen.length} lessen, ${aantalPrintbladen} printbladen`);
 }
 
 main()
