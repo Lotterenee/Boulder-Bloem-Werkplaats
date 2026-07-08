@@ -61,9 +61,10 @@ de-kas/
 │  │  ├─ projecten/…             # lijst, [id] (stepper, wensen, taken, ontwerp…)
 │  │  ├─ ontwerpstudio/[ontwerpId]/page.tsx
 │  │  ├─ subsidies/…             # radar, aanvragen
-│  │  ├─ educatie/…              # activiteiten, pakketten
+│  │  ├─ educatie/…              # activiteiten, pakketten, lesbibliotheek
 │  │  ├─ bibliotheek/…           # elementen, planten, partners
 │  │  └─ instellingen/page.tsx
+│  ├─ (print)/                   # printweergaven (les-PDF), ook beschermd
 │  ├─ api/
 │  │  ├─ auth/[...nextauth]/route.ts
 │  │  ├─ health/route.ts         # 200 OK voor Railway healthcheck
@@ -72,7 +73,8 @@ de-kas/
 ├─ lib/
 │  ├─ prisma.ts                  # singleton
 │  ├─ auth.ts                    # NextAuth config
-│  ├─ validators/                # Zod-schema's (canvas, offerte, subsidiescan)
+│  ├─ actions/                   # Server Actions (alle mutaties)
+│  ├─ validators/                # Zod-schema's (canvas, offerte, subsidiescan, les, meting)
 │  └─ domain/                    # domeinlogica (btw, valruimte, coach-checks)
 ├─ prisma/
 │  ├─ schema.prisma

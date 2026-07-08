@@ -52,6 +52,9 @@ implementatie bewust af; alles hier is klein en terug te draaien.
   verdwijnt.
 
 ## Lesbibliotheek (Fase 4b)
+- De migratie heet `20260708085448_lesbibliotheek` (Prisma's timestamp-naamgeving
+  via `migrate dev --name lesbibliotheek`), niet letterlijk `0007_lesbibliotheek`
+  zoals het fase-document voorstelt.
 - `LesSchema` heeft een extra optioneel veld `nummer` (werkboek-volgorde) dat
   niet in de oorspronkelijke requirements stond; het stuurt de volgorde en het
   nummer in het lesbibliotheek-overzicht.
